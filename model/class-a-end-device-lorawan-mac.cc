@@ -293,9 +293,11 @@ ClassAEndDeviceLorawanMac::TxFinished (Ptr<const Packet> packet)
 	  // m_secondReceiveWindow = Simulator::Schedule (m_receiveDelay2,
 	  //                                              &ClassAEndDeviceLorawanMac::OpenSecondReceiveWindow,
 	  //                                              this);
+  }else{
+	  // Switch the PHY to sleep
+	  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
   }
-  // Switch the PHY to sleep
-  m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();
+
 }
 
 void
