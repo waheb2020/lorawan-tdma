@@ -13,6 +13,8 @@
 		7. helper/tdma-sender-helper.c
 		8. helper/tdma-sender-helper.h
 		
-	- Modified devices
+	- Modified lorawan device configurations:
+		1. class-a-end-device-lorawan-mac.cc - param to disable retransmission
+		
 	
 	
