@@ -57,7 +57,7 @@ def combine_throughput(dev_file, gw_file):
 
     gw_sub = gw_df[['recv_time', 'gw_dev_id', 'packet']]
     df_O = pd.merge(dev_df, gw_sub, on="packet", how="left")
-    df_O.to_csv("../ns-3/packet_tracker.csv", index=False)
+    df_O.to_csv("../ns-3/packet_tracker.csv", index=False, sep=' ', header=False)
 
 
 if __name__ == '__main__':
