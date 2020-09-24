@@ -80,6 +80,10 @@ LorawanMac::GetPhy (void)
   return m_phy;
 }
 
+void LorawanMac::SetReceiveOkCallback (RxOkCallback callback)
+{
+  m_rxOkCallback = callback;
+}
 void
 LorawanMac::SetPhy (Ptr<LoraPhy> phy)
 {

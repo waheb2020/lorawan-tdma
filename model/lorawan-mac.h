@@ -48,6 +48,7 @@ public:
   virtual ~LorawanMac ();
 
   typedef std::array<std::array<uint8_t, 6>, 8> ReplyDataRateMatrix;
+  typedef Callback<void, Ptr<Packet const> > RxOkCallback;
 
   /**
    * Set the underlying PHY layer
@@ -210,6 +211,7 @@ public:
    */
   int GetNPreambleSymbols (void);
 
+  void SetReceiveOkCallback (RxOkCallback callback);
 protected:
   /**
   * The trace source that is fired when a packet cannot be sent because of duty
@@ -276,6 +278,7 @@ protected:
    * sending DR and on the value of the RX1DROffset parameter.
    */
   ReplyDataRateMatrix m_replyDataRateMatrix;
+  RxOkCallback m_rxOkCallback;
 };
 
 } /* namespace ns3 */

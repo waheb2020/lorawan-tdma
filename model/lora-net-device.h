@@ -97,7 +97,7 @@ public:
    *
    * \param packet The packet that was received.
    */
-  void Receive (Ptr<Packet> packet);
+  void Receive (Ptr<Packet const> packet);
 
   // From class NetDevice. Some of these have little meaning for a LoRaWAN
   // network device (since, for instance, IP is not used in the standard)

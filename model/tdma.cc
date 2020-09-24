@@ -1,6 +1,7 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 
 #include "tdma.h"
+#include "sys/time.h"
 
 namespace ns3 {
 
@@ -38,6 +39,13 @@ namespace ns3 {
 			double tPayload = payloadSymbNb * t_sym;
 			double toa = tPayload + tPreamble;//Time on Air for the packets
 			return toa;
+		}
+
+		long int ts_now(){
+			struct timeval tp;
+			gettimeofday(&tp, NULL);
+			long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+			return ms;
 		}
 
 	}

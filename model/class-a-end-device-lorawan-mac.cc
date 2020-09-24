@@ -232,6 +232,9 @@ ClassAEndDeviceLorawanMac::Receive (Ptr<Packet const> packet)
           // Reset retransmission parameters
           resetRetransmissionParameters ();
         }
+    } else if (mHdr.IsUplink()){
+      // Notify the application of new packet received
+      this->m_rxOkCallback (packet);
     }
 
   m_phy->GetObject<EndDeviceLoraPhy> ()->SwitchToSleep ();

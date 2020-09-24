@@ -9,6 +9,13 @@
 #include "ns3/string.h"
 #include "ns3/lora-net-device.h"
 #include "ns3/simulator.h"
+#include "ns3/lora-tag.h"
+#include "ns3/end-device-lora-phy.h"
+#include "ns3/packet-sink.h"
+#include "ns3/callback.h"
+#include <string>  
+
+using namespace std;
 
 namespace ns3 {
 
@@ -18,9 +25,10 @@ NS_LOG_COMPONENT_DEFINE("TDMASender");
 NS_OBJECT_ENSURE_REGISTERED(TDMASender);
 
 TypeId TDMASender::GetTypeId(void) {
-	static TypeId tid =
-			TypeId("ns3::TDMASender").SetParent<Application>().AddConstructor<
-					TDMASender>().SetGroupName("tdma");
+	static TypeId tid =	TypeId("ns3::TDMASender")
+	.SetParent<Application>()
+	.AddConstructor<TDMASender>()
+	.SetGroupName("tdma");
 	return tid;
 }
 
@@ -40,13 +48,12 @@ TDMASender::~TDMASender() {
 }
 void TDMASender::SetTDMAParams(TDMAParams params) {
 	m_interval = params.interval;
+	m_dev_type = params.devType;
 }
 void TDMASender::ScheduleReach(void) {
 //	NS_LOG_FUNCTION_NOARGS ();
 
-	Ptr < RandomVariableStream > rv = CreateObjectWithAttributes
-			< UniformRandomVariable
-			> ("Min", DoubleValue(30), "Max", DoubleValue(50));
+	Ptr <RandomVariableStream> rv = CreateObjectWithAttributes<UniformRandomVariable> ("Min", DoubleValue(30), "Max", DoubleValue(50));
 	m_packet = rv->GetInteger();
 	tm ltm = startTime;
 	double sim_tm = Simulator::Now().GetSeconds();
@@ -55,9 +62,20 @@ void TDMASender::ScheduleReach(void) {
 	fmt_date_tm(&ltm, now_str, 0);
 	ltm.tm_sec -= sim_tm;
 
-	Ptr < Packet > packet = Create < Packet > (m_packet);
-	NS_LOG_INFO(
-			"Sent: "<<this->m_packet <<", At: " << now_str << ", The packet: " << packet);
+	long int ms = ts_now();
+	char ms_str[21];
+	sprintf(ms_str, "%li", ms);
+	string raw = "S";
+	raw = raw.append(ms_str);
+	// const unsigned char* pckt = (const unsigned char*)raw;
+	uint32_t len = raw.length();
+	NS_LOG_INFO("Len: " << len);
+	Ptr<Packet> packet = Create<Packet>((const uint8_t*)raw.c_str(), raw.length());
+	LoraTag tag;
+	packet->RemovePacketTag(tag);
+	tag.SetFrequency(868.1);
+	packet->AddPacketTag(tag);
+	// NS_LOG_INFO("Sent: "<<this->m_packet <<", At: " << now_str << ", The packet: " << packet);
 	m_mac->Send(packet);
 
 	Simulator::Cancel (m_sendEvent);
@@ -71,9 +89,7 @@ void TDMASender::SendPacket(void) {
 //  NS_LOG_FUNCTION_NOARGS ();
 	tm ltm = startTime;
 	if (m_tracker == 0) {
-		Ptr < RandomVariableStream > rv = CreateObjectWithAttributes
-				< UniformRandomVariable
-				> ("Min", DoubleValue(0), "Max", DoubleValue(5));
+		Ptr < RandomVariableStream > rv = CreateObjectWithAttributes<UniformRandomVariable> ("Min", DoubleValue(0), "Max", DoubleValue(5));
 		m_tracker = rv->GetInteger();
 	}
 
@@ -89,10 +105,24 @@ void TDMASender::SendPacket(void) {
 
 	Simulator::Cancel (m_sendEvent);
 	m_send_window = delta(1);
-	m_sendEvent = Simulator::Schedule(Seconds(slot), &TDMASender::ScheduleReach,
-			this);
+	m_sendEvent = Simulator::Schedule(Seconds(slot), &TDMASender::ScheduleReach, this);
 }
 
+bool TDMASender::Receive (Ptr<NetDevice> loraNetDevice, Ptr<const Packet> packet, uint16_t protocol, const Address& sender) {
+	const uint32_t size = packet->GetSize();
+ 	NS_LOG_INFO("Packet size: " << size);
+
+	uint8_t buffer[size] = {};
+	packet->CopyData(buffer, size);
+	buffer[size] = 0;
+	NS_LOG_INFO("Data: " << buffer);
+
+	long int ms = ts_now();
+
+	NS_LOG_INFO("Time: " << ms);
+
+	return true;
+}
 void TDMASender::StartApplication(void) {
 	tm ltm = startTime;
 	NS_LOG_FUNCTION(this);
@@ -104,20 +134,24 @@ void TDMASender::StartApplication(void) {
 	NS_LOG_INFO(
 			"Starting Application with DELTA of " << slot << " seconds, At: " <<now_str);
 
+	Ptr < LoraNetDevice > loraNetDevice = m_node->GetDevice(0)->GetObject<LoraNetDevice>();
 	// Make sure we have a MAC layer
 	if (m_mac == 0) {
 		// Assumes there's only one device
-		Ptr < LoraNetDevice > loraNetDevice = m_node->GetDevice(0)->GetObject<
-				LoraNetDevice>();
-
 		m_mac = loraNetDevice->GetMac();
 		NS_ASSERT(m_mac != 0);
 	}
 
 	// Schedule the next SendPacket event
 	Simulator::Cancel (m_sendEvent);
-	m_sendEvent = Simulator::Schedule(Seconds(0), &TDMASender::SendPacket,
-			this);
+	NS_LOG_INFO("Device Type: "<< m_dev_type);
+	if (m_dev_type == 0){//Gateway
+		m_sendEvent = Simulator::Schedule(Seconds(0), &TDMASender::SendPacket, this);
+	}else{
+		Ptr<EndDeviceLoraPhy> phy = loraNetDevice->GetPhy()->GetObject<EndDeviceLoraPhy>();
+		phy->SetSpreadingFactor(12);
+		phy->SwitchToStandby();
+	}
 }
 
 void TDMASender::StopApplication(void) {

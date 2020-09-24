@@ -73,6 +73,7 @@ void
 LoraNetDevice::SetMac (Ptr<LorawanMac> mac)
 {
   m_mac = mac;
+  m_mac->SetReceiveOkCallback (MakeCallback (&LoraNetDevice::Receive, this));
 }
 
 Ptr<LorawanMac>
@@ -119,7 +120,7 @@ LoraNetDevice::Send (Ptr<Packet> packet)
 }
 
 void
-LoraNetDevice::Receive (Ptr<Packet> packet)
+LoraNetDevice::Receive (Ptr<Packet const> packet)
 {
   NS_LOG_FUNCTION (this << packet);
 
